@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中国朝代更迭图鉴</title>
+<style>
+  :root{
+    --ink:#2b2b25; --paper:#f7f4ec; --sea:#d6e6ef; --card:#fffdf7;
+    --accent:#8c3b2e; --line:#d8d2c2;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+  header{padding:12px 24px 8px;border-bottom:1px solid var(--line);background:var(--card);display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  header h1{font-size:22px;letter-spacing:2px}
+  header .sub{font-size:12px;color:#8a8470}
+  nav{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  nav button{font-size:14px;padding:7px 16px;border:1px solid var(--line);background:#f1ecdf;border-radius:18px;cursor:pointer;color:#55503f;transition:.15s}
+  nav button:hover{border-color:var(--accent);color:var(--accent)}
+  nav button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:bold}
+  /* 朝代时间轴 */
+  #dynbar{display:flex;gap:3px;padding:8px 14px;background:#efe9da;border-bottom:1px solid var(--line);overflow-x:auto}
+  #dynbar button{flex:1 1 0;min-width:44px;padding:5px 4px;border:1px solid rgba(0,0,0,.12);border-radius:7px;cursor:pointer;font-size:12.5px;line-height:1.25;color:#3c3528;background:#fff;transition:.15s;white-space:nowrap}
+  #dynbar button small{display:block;font-size:9.5px;color:rgba(0,0,0,.45);transform:scale(.92)}
+  #dynbar button:hover{filter:brightness(1.05);transform:translateY(-1px)}
+  #dynbar button.on{color:#fff;font-weight:bold;border-color:rgba(0,0,0,.3);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+  #dynbar button.on small{color:rgba(255,255,255,.8)}
+  main{flex:1;display:flex;min-height:0}
+  #mapWrap{flex:1;position:relative;background:var(--sea);overflow:hidden}
+  #map{width:100%;height:100%;display:block}
+  aside{width:350px;min-width:310px;border-left:1px solid var(--line);background:var(--card);padding:18px;overflow-y:auto}
+  aside h2{font-size:17px;color:var(--accent);margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  aside h2 .tag{font-size:11px;background:#efe6d8;color:#8a6a43;border-radius:4px;padding:2px 7px;font-weight:normal}
+  aside .meta{margin:10px 0;border-top:1px dashed var(--line)}
+  aside .meta div{display:flex;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+  aside .meta b{width:92px;flex:none;color:#8a6a43;font-weight:normal}
+  aside p{font-size:13.5px;line-height:1.85;margin-top:8px;text-align:justify}
+  aside .hint{font-size:12px;color:#9a937e;margin-top:14px;line-height:1.7}
+  aside ul.list{margin-top:10px;font-size:13px;line-height:1.6}
+  aside ul.list li{list-style:none;padding:5px 8px;margin-bottom:4px;background:#f5f0e4;border-radius:6px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+  aside ul.list li:hover{background:#eee3cd}
+  aside ul.list li span.v{color:#9a7c50;white-space:nowrap}
+  /* 大事记列表 */
+  .evts{margin-top:12px}
+  .evts h3{font-size:13px;color:#8a6a43;margin-bottom:6px;border-left:3px solid var(--accent);padding-left:7px}
+  .evt{display:flex;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.8px;line-height:1.6}
+  .evt .yr{flex:none;min-width:64px;color:#fff;background:#a98253;border-radius:4px;text-align:center;font-size:11px;height:fit-content;padding:2px 4px;margin-top:2px}
+  .evt .tt b{color:#5d4423}
+  .navbtns{display:flex;gap:8px;margin-top:14px}
+  .navbtns button{flex:1;padding:7px;border:1px solid var(--line);background:#f1ecdf;border-radius:8px;cursor:pointer;font-size:13px;color:#55503f}
+  .navbtns button:hover{border-color:var(--accent);color:var(--accent)}
+  #tooltip{position:absolute;pointer-events:none;background:rgba(40,36,28,.92);color:#fff;font-size:12.5px;padding:6px 10px;border-radius:6px;display:none;z-index:9;max-width:250px;line-height:1.5}
+  #legend{position:absolute;left:14px;bottom:14px;background:rgba(255,253,247,.93);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:12px;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.08);max-width:240px}
+  #legend h4{font-size:12px;margin-bottom:6px;color:#6b6450}
+  #legend .row{display:flex;align-items:center;gap:7px;margin:4px 0}
+  #legend .sw{width:16px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.18);flex:none}
+  #legend .ln{width:18px;height:0;border-top:3px solid #7a4a28;border-radius:2px;flex:none}
+  #legend .dash{border-top:2px dashed #555}
+  .prov{fill:#f0ebdd;stroke:#c5bda8;stroke-width:.6}
+  .provline{fill:none;stroke:rgba(90,80,60,.35);stroke-width:.5;pointer-events:none}
+  .shape{cursor:pointer;transition:filter .12s}
+  .shape:hover{filter:brightness(1.07) saturate(1.12)}
+  .shape.sel{stroke:#fff !important;stroke-width:2.4;filter:drop-shadow(0 0 5px rgba(0,0,0,.45));animation:selPulse 1.4s ease-in-out infinite}
+  @keyframes selPulse{0%,100%{stroke-width:2.4}50%{stroke-width:5.5}}
+  @keyframes lineGlow{0%,100%{stroke-opacity:1}50%{stroke-opacity:.45}}
+  .ripple{fill:none;pointer-events:none;animation:rippleOut .65s ease-out forwards}
+  .ripple2{animation-delay:.12s;animation-duration:.75s}
+  @keyframes rippleOut{0%{r:3;opacity:.95;stroke-width:4}100%{r:48;opacity:0;stroke-width:.5}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes panelIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  aside.anim{animation:panelIn .32s ease}
+  .realmLabel{font-weight:bold;fill:#3c3528;pointer-events:none;text-anchor:middle;paint-order:stroke;stroke:rgba(255,255,255,.8);stroke-width:3.5}
+  .capStar{cursor:pointer}
+  .capLabel{font-size:11px;fill:#7a2d1f;font-weight:bold;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.88);stroke-width:3}
+  .wallLine{fill:none;stroke:#8a5a2a;stroke-width:2.6;stroke-dasharray:2 4;stroke-linecap:round;pointer-events:none}
+  .noteLabel{font-size:11px;fill:#6b5a3f;pointer-events:none;text-anchor:middle;paint-order:stroke;stroke:rgba(255,255,255,.75);stroke-width:2.5}
+  .evtMark{cursor:pointer}
+  .evtLabel{font-size:10px;fill:#3c3528;pointer-events:none;paint-order:stroke;stroke:rgba(255,255,255,.85);stroke-width:2.5}
+  .chartBar{cursor:pointer}
+  .chartBar:hover{filter:brightness(1.1)}
+  .chartTxt{pointer-events:none;paint-order:stroke;stroke:rgba(247,244,236,.9);stroke-width:3}
+  footer{font-size:11px;color:#a09a86;padding:6px 24px;border-top:1px solid var(--line);background:var(--card)}
+  @media (max-width:860px){ main{flex-direction:column} aside{width:100%;border-left:none;border-top:1px solid var(--line);max-height:44vh} }
+</style>
+</head>
+<body>
+<header>
+  <h1>中国朝代更迭图鉴</h1>
+  <span class="sub">朝代疆域 · 关键事件 · 都城变迁 · 统一与分裂 —— 点击时间轴与地图查看详情</span>
+  <nav id="tabs"></nav>
+</header>
+<div id="dynbar"></div>
+<main>
+  <div id="mapWrap">
+    <svg id="map" viewBox="0 0 1000 730" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="tooltip"></div>
+    <div id="legend"></div>
+  </div>
+  <aside id="panel"></aside>
+</main>
+<footer>底图为今日省界（阿里云 DataV 公开数据，简化示意）。历代疆域为<b>盛期约略示意</b>，历史边界存在学术争议与年代变动，羁縻、藩属与实际控制范围差异很大，仅供学习参考，不作为任何主张依据。</footer>
+
+<script src="china-geo.js"></script>
+<script>
+/* ---------- 投影（与地形图鉴一致） ---------- */
+const PX = lon => (lon - 73) * 16;
+const PY = lat => (54 - lat) * 20;
+const P = (lon, lat) => PX(lon).toFixed(1) + ',' + PY(lat).toFixed(1);
+const pathOf = pts => 'M' + pts.map(p => P(p[0], p[1])).join('L') + 'Z';
+const lineOf = pts => 'M' + pts.map(p => P(p[0], p[1])).join('L');
+
+/* ================================================== 朝代数据 ================================================== */
+const QIN_WALL = [[103.8,35.4],[106,37],[108,39],[110,41],[112.5,41.5],[116,42],[120,42],[124,42.5]];
+const MING_WALL = [[98.2,39.8],[101.5,39],[104,39.8],[107,40.7],[111,40.3],[114,40.5],[117.8,40.2],[119.7,40]];
+
+const DYNS = [
+ {id:'xia', name:'夏', period:'约前2070–前1600', color:'#8a9a5b',
+  realms:[{name:'夏（中心区）', color:'#8a9a5b', poly:[[110,35.8],[112,36.8],[114,36.2],[115.2,34.8],[113.5,33.3],[111,33.6],[109.6,34.5]], labelAt:[112.3,35]}],
+  caps:[{n:'斟鄩（二里头·今洛阳偃师）', lon:112.7, lat:34.7}],
+  stats:[['起止','约前2070 – 前1600（约470年）'],['开创','禹传子启，"公天下"变"家天下"'],['中心','豫西、晋南（黄河中游）'],['考古','二里头遗址（宫城、青铜礼器）']],
+  desc:'史书记载的第一个世袭王朝。文献与考古尚未完全互证，但二里头遗址展示的宫殿、青铜与礼制，说明黄河中游此时已出现广域王权。疆域谈不上边界，只有以都邑为中心的势力范围。',
+  events:[{y:'约前2070',t:'禹会诸侯、启建夏',n:'治水成功积累的权威转化为王权，禅让制终结。'},{y:'约前19世纪',t:'太康失国与少康中兴',n:'后羿代夏四十年，少康复国，是最早的"中兴"叙事。'},{y:'约前1600',t:'鸣条之战，商汤灭夏',n:'夏桀失德的记载成为后世"天命转移"理论的起点。'}]},
+ {id:'shang', name:'商', period:'前1600–前1046', color:'#b08a3e',
+  realms:[{name:'商', color:'#b08a3e', poly:[[108.5,34.5],[110,36.8],[112,38.3],[114.5,38.8],[117.5,37.8],[118.8,36],[117,33.3],[114.8,31.8],[112,31.5],[109.5,32.6]], labelAt:[113.5,35.5]}],
+  caps:[{n:'殷（今安阳）', lon:114.35, lat:36.1},{n:'亳（早期·今商丘一带）', lon:115.65, lat:34.4}],
+  stats:[['起止','前1600 – 前1046（约554年）'],['开国','商汤'],['都城','多次迁都，盘庚迁殷后稳定'],['文明标志','甲骨文、青铜器（司母戊鼎）']],
+  desc:'中国第一个有同时期文字直接证实的王朝。甲骨文让商史从传说变成信史；殷墟青铜铸造达到世界同期巅峰。商王通过方国联盟统治，势力圈随征伐伸缩。',
+  events:[{y:'约前1300',t:'盘庚迁殷',n:'结束"不常厥邑"的动荡，安阳从此稳坐都城两百余年。'},{y:'约前13世纪',t:'武丁中兴',n:'妇好领兵征伐，商势力达于江淮与西北。'},{y:'前1046',t:'牧野之战',n:'周武王联军一日破商，纣王自焚，"小邦周"取代"大邑商"。'}]},
+ {id:'zhou', name:'西周', period:'前1046–前771', color:'#7f9c6e',
+  realms:[{name:'西周（王畿+主要封国）', color:'#7f9c6e', poly:[[104.5,33.5],[106,35],[108,36],[110,37.3],[113,38.8],[116,39],[118.8,37.2],[119.8,35.5],[117.5,32.8],[115,31],[112,30],[108,31.3],[105.5,32]], labelAt:[111,34.5]}],
+  caps:[{n:'镐京（今西安）', lon:108.8, lat:34.2},{n:'洛邑（陪都·今洛阳）', lon:112.45, lat:34.62}],
+  stats:[['起止','前1046 – 前771（275年）'],['开国','周武王姬发'],['制度','分封制 + 宗法制 + 礼乐制'],['确切纪年起点','前841年（国人暴动·共和元年）']],
+  desc:'"封建亲戚，以藩屏周"——周王把土地人口分给王族功臣建立诸侯国，用血缘宗法把政治秩序织成一张网。这套制度塑造了此后三千年中国人的家国观念。',
+  events:[{y:'前1046',t:'武王克商、分封天下',n:'齐鲁燕晋宋卫等封国奠定日后列国格局。'},{y:'前841',t:'国人暴动，共和行政',n:'厉王被逐。中国历史从这一年起有了不间断的确切纪年。'},{y:'前771',t:'犬戎攻破镐京',n:'幽王身死骊山，平王东迁洛邑，西周终结。'}]},
+ {id:'cq', name:'春秋战国', period:'前770–前221', color:'#9c7b5e',
+  realms:[{name:'列国（东周天下）', color:'#9c7b5e', poly:[[102.5,32],[103.5,34.5],[106,36.5],[108.5,39],[110,41.5],[114,42.8],[118,42.5],[122,42],[125.5,41],[124.5,39.5],[121.5,38],[119.5,36],[120.5,33],[121.5,30],[119.5,27.5],[116,25.5],[112,25],[109.5,26.5],[108,29],[104.5,30],[103,31]], labelAt:[112,36]}],
+  caps:[{n:'洛邑（周天子）', lon:112.45, lat:34.62},{n:'临淄（齐）', lon:118.3, lat:36.8},{n:'咸阳（秦）', lon:108.7, lat:34.35},{n:'郢（楚·今荆州）', lon:112.2, lat:30.3},{n:'蓟（燕·今北京）', lon:116.4, lat:39.9}],
+  stats:[['起止','前770 – 前221（550年）'],['格局','春秋五霸 → 战国七雄'],['变革','铁器牛耕、变法图强、百家争鸣'],['尾声','秦以商鞅变法后国力横扫六国']],
+  desc:'周天子权威崩解，列国兼并五百年。这是最血腥也最有创造力的时代：孔孟老庄韩非同台，郡县、成文法、常备军等"现代国家零件"在竞争中被逼出来，最终由秦完成组装。',
+  events:[{y:'前651',t:'葵丘会盟',n:'齐桓公确立首霸，"尊王攘夷"开启霸政时代。'},{y:'前403',t:'三家分晋',n:'韩赵魏列为诸侯，史家以此为战国开端。'},{y:'前356',t:'商鞅变法',n:'废井田、行郡县、奖军功，秦国从边陲变成战争机器。'},{y:'前260',t:'长平之战',n:'秦赵倾国相搏，赵卒被坑四十万，六国再无力单独抗秦。'}]},
+ {id:'qin', name:'秦', period:'前221–前207', color:'#4a4a58', wall:QIN_WALL,
+  realms:[{name:'秦', color:'#5a5a6e', poly:[[103,34],[104.5,36],[106.5,38],[108,41],[110.5,41.8],[114,41.5],[117.5,42],[121,42.3],[124.5,41.5],[123.5,39.8],[121.5,38.3],[119.8,36.5],[121,34],[122,31.5],[121,28.5],[119,25.5],[116,23],[112,21],[108.5,20.8],[106,22.5],[104.5,24],[105.5,26.5],[103.5,29],[102,31.5]], labelAt:[112,33]}],
+  caps:[{n:'咸阳', lon:108.7, lat:34.35}],
+  stats:[['起止','前221 – 前207（仅15年）'],['开国','秦始皇嬴政'],['制度','皇帝制 + 郡县制 + 三公九卿'],['工程','长城、驰道、灵渠、兵马俑']],
+  desc:'中国第一个大一统中央集权王朝。书同文、车同轨、统一度量衡，把"中国"从地理名词变成制度实体；但徭役严苛，二世而亡。它搭好的框架被汉朝原样继承——"百代都行秦政法"。',
+  events:[{y:'前221',t:'灭六国，称皇帝',n:'王绾李斯议帝号，郡县制取代分封制。'},{y:'前214',t:'北筑长城、南并百越',n:'蒙恬却匈奴七百里，灵渠沟通长江珠江水系。'},{y:'前209',t:'大泽乡起义',n:'"王侯将相宁有种乎"，第一次全国性平民起义。'},{y:'前207',t:'巨鹿之战·秦亡',n:'项羽破釜沉舟歼秦主力，刘邦先入关中受降。'}]},
+ {id:'han', name:'汉', period:'前202–220', color:'#a03d3d', wall:QIN_WALL,
+  realms:[{name:'汉（本部）', color:'#a03d3d', poly:[[92,39],[96,40.5],[100,41.5],[104,42.5],[108,42.3],[112,42.8],[116,43],[121,42.8],[125,42.3],[128,42],[130,41],[127,39.3],[125.5,38.5],[123.5,38.8],[121.8,38.2],[119.5,36.3],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[109.3,20.6],[107,18.3],[105.9,17.6],[104,22.3],[102,23],[100,24],[98.5,25.5],[98,27.5],[100,29],[101,31],[99,33],[96,34.5],[92,36.5],[90,38]], labelAt:[111,34]},
+          {name:'西域都护府（羁縻）', color:'#c4766a', poly:[[75,40.5],[80,42],[86,43.5],[92,43],[94,41],[90,39.5],[84,38],[78,37.5],[74.5,38.5]], labelAt:[84,40.8]}],
+  caps:[{n:'长安（西汉）', lon:108.9, lat:34.3},{n:'洛阳（东汉）', lon:112.45, lat:34.62}],
+  stats:[['起止','前202 – 220（422年，含新莽间隔）'],['开国','汉高祖刘邦'],['鼎盛','汉武帝北击匈奴、凿空西域'],['遗产','"汉人""汉字""汉语"由此得名']],
+  desc:'中国历史上最长寿的大一统王朝。文景之治休养生息，武帝时代开疆拓土：卫青霍去病逐匈奴于漠北，张骞凿空西域开辟丝绸之路，前60年设西域都护府，今新疆地区正式纳入中央政权管辖。独尊儒术确立了此后两千年的意识形态底盘。',
+  events:[{y:'前202',t:'垓下之战，刘邦称帝',n:'四面楚歌，霸王别姬，汉承秦制而宽缓其政。'},{y:'前138/前119',t:'张骞两使西域',n:'丝绸之路贯通，葡萄苜蓿东来，丝绸漆器西去。'},{y:'前119',t:'漠北之战',n:'霍去病封狼居胥，匈奴远遁，"漠南无王庭"。'},{y:'8–23',t:'王莽代汉建新',n:'托古改制全面翻车，绿林赤眉并起，光武中兴再续汉祚。'},{y:'184',t:'黄巾起义',n:'"苍天已死，黄天当立"，州牧拥兵，群雄时代开场。'}]},
+ {id:'sanguo', name:'三国', period:'220–280', color:'#5e7f9c',
+  realms:[{name:'魏', color:'#5e7f9c', poly:[[97,34.5],[100,36.5],[104,38],[106,40],[110,41.5],[114,42],[118,42.5],[122,42],[125,41.5],[127.5,41],[126,39],[124,38],[121.8,38.2],[119.5,36.3],[120.8,34.5],[118.5,33],[115.5,32.5],[112.5,32.8],[110,32.5],[107.5,33],[104.5,32.8],[102,33.5],[99,33.8]], labelAt:[112,38]},
+          {name:'蜀汉', color:'#7f9c5e', poly:[[97.5,33.8],[102,33.5],[104.5,32.8],[107.5,33],[110,32.5],[110.5,30.5],[110,28],[108.5,25.5],[106,24],[103,23],[100,23.5],[98.5,25.5],[98,28],[99.5,31],[98,33]], labelAt:[103,29]},
+          {name:'吴', color:'#b08a3e', poly:[[110,32.5],[112.5,32.8],[115.5,32.5],[118.5,33],[120.8,34.5],[122.3,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[109.3,20.6],[107.2,18.6],[105.9,17.6],[108.9,17.6],[110.5,19.5],[111.5,22],[110.5,25],[110,28],[110.5,30.5]], labelAt:[115.5,27.5]}],
+  caps:[{n:'洛阳（魏）', lon:112.45, lat:34.62},{n:'成都（蜀）', lon:104.07, lat:30.67},{n:'建业（吴·今南京）', lon:118.8, lat:32.06}],
+  stats:[['起止','220 – 280（60年）'],['格局','魏得中原、蜀据巴蜀、吴占江东'],['分界','魏蜀隔秦岭，魏吴隔淮河长江'],['终局','263 魏灭蜀 → 265 晋代魏 → 280 晋灭吴']],
+  desc:'汉末群雄淘汰赛的决赛圈。赤壁一把火烧出三分天下：曹魏屯田抚北方，诸葛亮治蜀六出祁山，孙吴开发江南经略夷洲（台湾）。人口从汉末六千万锐减至千余万，是演义传奇背后的残酷底色。',
+  events:[{y:'200',t:'官渡之战',n:'曹操以弱胜强吞袁绍，统一北方。'},{y:'208',t:'赤壁之战',n:'孙刘联军火攻破曹，三分格局底定。'},{y:'221–234',t:'诸葛亮治蜀与北伐',n:'鞠躬尽瘁，五丈原星落，"出师未捷身先死"。'},{y:'280',t:'王濬楼船下益州',n:'晋灭吴，"金陵王气黯然收"，天下复归一统。'}]},
+ {id:'jin', name:'两晋', period:'266–420', color:'#8a7ba0',
+  realms:[{name:'西晋（统一期 280–316）', color:'#8a7ba0', poly:[[97,34.5],[100,36.5],[104,38],[106,40],[110,41.5],[114,42],[118,42.5],[122,42],[125,41.5],[127.5,41],[126,39],[124,38],[121.8,38.2],[119.5,36.3],[120.8,34.5],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[109.3,20.6],[107,18.5],[105.9,17.6],[104,22],[102,23],[100,23.5],[98.5,25.5],[98,28],[99.5,31],[98,33.8]], labelAt:[111,33.5]}],
+  caps:[{n:'洛阳（西晋）', lon:112.45, lat:34.62},{n:'建康（东晋·今南京）', lon:118.8, lat:32.06}],
+  stats:[['起止','266 – 420（西晋统一仅36年）'],['开国','晋武帝司马炎'],['转折','八王之乱 → 永嘉之乱 → 衣冠南渡'],['南迁','中原士族百姓大举渡江，江南大开发']],
+  desc:'司马家族篡魏灭吴短暂统一，却在宗室内战（八王之乱）中耗尽元气。311年洛阳陷落，北方进入"十六国"混战，琅琊王司马睿在建康重建朝廷——中国第一次大规模衣冠南渡，经济文化重心开始南移。',
+  events:[{y:'280',t:'西晋灭吴统一',n:'太康之治昙花一现。'},{y:'291–306',t:'八王之乱',n:'皇族自相残杀十六年，北方防务崩盘。'},{y:'311',t:'永嘉之乱',n:'洛阳失陷怀帝被俘，北方士民南渡江左。'},{y:'383',t:'淝水之战',n:'谢安谢玄八万北府兵破前秦百万，"风声鹤唳，草木皆兵"，南北分立格局固定。'}]},
+ {id:'nbc', name:'南北朝', period:'420–589', color:'#6e8f9c',
+  realms:[{name:'北朝（北魏→东西魏→齐周）', color:'#6e8f9c', poly:[[96,39.5],[100,41],[104,42.5],[108,43],[112,43.5],[116,43],[120,42.5],[124,42],[126.5,41.5],[125,39.5],[122,38.3],[119.8,36.5],[118,34.5],[114.5,33.5],[111,33],[107.5,33.5],[104,33],[101,34],[98,34.5],[95,37.5]], labelAt:[110,39]},
+          {name:'南朝（宋齐梁陈）', color:'#9c8a5e', poly:[[98.5,25.5],[100,23.5],[103,23],[106,22],[108.3,20.4],[106.5,18.3],[108.9,17.6],[111,19.5],[113,21.6],[116.5,23.2],[119.5,25.8],[121,28.5],[122,31.5],[120.8,33.8],[118,34.5],[114.5,33.5],[111,33],[107.5,33.5],[104,33],[101,31],[99.5,29],[98,27]], labelAt:[113,27.5]}],
+  caps:[{n:'平城（北魏前期·今大同）', lon:113.3, lat:40.1},{n:'洛阳（北魏后期）', lon:112.45, lat:34.62},{n:'建康（南朝·今南京）', lon:118.8, lat:32.06}],
+  stats:[['起止','420 – 589（169年）'],['北朝','北魏统一北方 → 分裂为东西魏 → 北齐北周'],['南朝','宋、齐、梁、陈四代更替'],['主旋律','民族大融合 + 佛教大兴（云冈龙门石窟）']],
+  desc:'中国历史上最长的南北对峙。鲜卑北魏统一北方后，孝文帝迁都洛阳全面汉化，改汉姓、说汉语、通婚姻——胡汉血脉在冲突与融合中拧成一股，为隋唐的开放气象备好了底料。',
+  events:[{y:'439',t:'北魏统一北方',n:'十六国混战结束，南北朝对峙开始。'},{y:'494',t:'孝文帝迁都洛阳',n:'最彻底的主动汉化改革，胡汉界限加速消融。'},{y:'548',t:'侯景之乱',n:'建康沦为废墟，南朝实力自此一蹶不振。'},{y:'577',t:'北周灭北齐',n:'北方再统一，杨坚的舞台已经搭好。'}]},
+ {id:'sui', name:'隋', period:'581–618', color:'#5f8f7a',
+  realms:[{name:'隋', color:'#5f8f7a', poly:[[92,39],[96,40.5],[100,41.5],[105,42],[109,42],[113,42.5],[117,42.8],[121,42.5],[124.5,41.8],[123,40],[121.5,38.3],[119.5,36.3],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[109.3,20.6],[107,18.3],[105.9,17.6],[104,22.3],[102,23],[100,24],[98.5,25.5],[98,28],[99.5,31],[99,33],[96,34.5],[93,36.5],[90,38]], labelAt:[111,33.5]}],
+  caps:[{n:'大兴（今西安）', lon:108.9, lat:34.3},{n:'东都洛阳', lon:112.45, lat:34.62}],
+  stats:[['起止','581 – 618（37年）'],['开国','隋文帝杨坚'],['创举','科举制、三省六部制、大运河'],['败笔','滥用民力：运河+东征+巡游压垮民生']],
+  desc:'又一个"短命但改写规则"的王朝，与秦惊人相似。结束近三百年分裂，开科举让寒门有了上升通道，修大运河把南方的粮食财富接进北方政治中心——隋亡了，但它的制度和运河养活了唐宋。',
+  events:[{y:'589',t:'隋灭陈',n:'自西晋末以来273年的分裂终结。'},{y:'605–610',t:'开凿大运河',n:'以洛阳为中心沟通五大水系，南北经济动脉贯通。'},{y:'612–614',t:'三征高句丽',n:'百万大军折戟辽东，天下户口耗半，民变四起。'},{y:'618',t:'江都之变',n:'炀帝被禁军缢杀，李渊在长安称帝建唐。'}]},
+ {id:'tang', name:'唐', period:'618–907', color:'#c2912e',
+  realms:[{name:'唐（极盛·含羁縻都护府）', color:'#c2912e', poly:[[74,38.5],[74,41],[76,43],[80,45.5],[85,47.5],[90,48.5],[95,49.5],[100,50.5],[106,51],[112,51.5],[118,52],[122,53],[126,52],[129,50],[132,48.5],[134.8,48.5],[134,46],[131,43],[129.5,42],[130.5,40],[127,39],[125,38],[122,38.3],[119.5,36.3],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[109.3,20.6],[107,18.3],[105.9,17.6],[104,22.3],[102,23],[100,24],[98.5,25.5],[98,28],[99.5,31],[99,33],[96,34.5],[92,36],[88,36.5],[84,37],[80,37],[76,37.5]], labelAt:[106,44]}],
+  caps:[{n:'长安', lon:108.9, lat:34.3},{n:'东都洛阳', lon:112.45, lat:34.62}],
+  stats:[['起止','618 – 907（289年）'],['鼎盛','贞观之治 → 开元盛世（人口超8000万）'],['疆域管理','安西、北庭、安北等六大都护府（羁縻）'],['气象','万国来朝，长安百万人口的世界都会']],
+  desc:'古代中国的巅峰时刻。高宗时疆域极盛，西越葱岭、北包贝加尔，以都护府羁縻统治（图中浅色大框为羁縻范围示意，吐蕃不在版图内）。诗歌、佛教、胡乐、科举在此交汇；安史之乱后藩镇割据，盛世急转直下。',
+  events:[{y:'626',t:'玄武门之变',n:'李世民弑兄登基，却开出贞观之治。'},{y:'690',t:'武则天称帝',n:'中国唯一女皇帝，改国号为周十五年。'},{y:'755–763',t:'安史之乱',n:'盛唐的分水岭：人口锐减，藩镇从此尾大不掉。'},{y:'875–884',t:'黄巢起义',n:'冲天香阵透长安，门阀士族被彻底扫进历史。'},{y:'907',t:'朱温代唐',n:'哀帝禅位，五代十国开场。'}]},
+ {id:'wudai', name:'五代十国', period:'907–960', color:'#8f7a5e',
+  realms:[{name:'中原王朝（梁唐晋汉周更替）', color:'#8f7a5e', poly:[[106,35],[108,38],[111,39.3],[114,39.8],[117,39.8],[119.5,38],[119,36],[120,34.5],[118,33],[115,32.5],[112,33],[109,33.5],[107,34]], labelAt:[113,36.5]},
+          {name:'十国（南方割据示意）', color:'#b0a06e', poly:[[99,25],[100,23.5],[103,23],[106,22],[108.3,20.4],[110.5,19],[111.5,22],[113,21.6],[116.5,23.2],[119.5,25.8],[121,28.5],[122,31.5],[120,34.3],[118,33],[115,32.5],[112,33],[109,33.5],[107,34],[104.5,32.5],[103,30],[100,28]], labelAt:[112,27]}],
+  caps:[{n:'开封（后梁晋汉周）', lon:114.3, lat:34.8},{n:'洛阳（后唐）', lon:112.45, lat:34.62}],
+  stats:[['起止','907 – 960（53年）'],['中原','后梁→后唐→后晋→后汉→后周，五代更替'],['南方','吴越、南唐、前后蜀等十国并存'],['关键失地','936 石敬瑭割燕云十六州予契丹']],
+  desc:'唐末藩镇的总清算：53年里中原换了5个朝代8姓14帝。南方十国相对安定，吴越修海塘、南唐兴文艺，经济重心南移加速。石敬瑭以"儿皇帝"身份割让燕云十六州，让此后四百年的中原王朝失去北方屏障。',
+  events:[{y:'907',t:'朱温建后梁',n:'唐亡，武人政治登峰造极。'},{y:'936',t:'石敬瑭割燕云十六州',n:'长城防线拱手让人，宋代三百年"心病"由此落下。'},{y:'954–959',t:'周世宗柴荣改革',n:'整军、均田、限佛，统一曙光初现，可惜英年早逝。'},{y:'960',t:'陈桥兵变',n:'赵匡胤黄袍加身，"和平演变"出一个新王朝。'}]},
+ {id:'song', name:'北宋·辽·西夏', period:'960–1127', color:'#2e7da0',
+  realms:[{name:'辽（契丹）', color:'#7a8fa5', poly:[[97,43],[102,44],[107,44.5],[112,45],[117,46],[121,48],[124,50],[128,50],[132,48.5],[134.8,48.5],[134,46],[131,43],[129.5,42],[127,40.5],[124,39.5],[121.8,38.6],[119,38.7],[116.5,39],[114,39.3],[112.5,40],[110,41],[107,42],[102,42.5]], labelAt:[120,44.5]},
+          {name:'北宋', color:'#2e7da0', poly:[[102,33.8],[104,34.8],[106,35.5],[108,36],[110,37],[112,38.5],[114,39.2],[116.5,39],[117.8,38.6],[119.5,37],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[111.5,20],[110,18],[108.5,18.8],[109.5,20.6],[106.5,22],[104.5,23],[102.5,23.2],[100,24],[98.5,25.5],[98,28],[99.5,31],[100.5,33]], labelAt:[113,30]},
+          {name:'西夏', color:'#b08a5e', poly:[[98,37],[100,38.5],[102,40],[104,41],[106.5,41.5],[108.5,41],[109.5,39.5],[107.5,38],[106,36.5],[104,35.8],[101.5,36],[99,36.3]], labelAt:[103.5,38.8]}],
+  caps:[{n:'东京开封府', lon:114.3, lat:34.8},{n:'上京临潢府（辽）', lon:119.9, lat:43.9},{n:'兴庆府（西夏·今银川）', lon:106.2, lat:38.5}],
+  stats:[['起止','960 – 1127（167年）'],['格局','宋辽"澶渊体系"百年和平 + 西夏鼎立'],['经济','人口破亿，交子（纸币）、市坊制瓦解'],['文化','理学、宋词、《清明上河图》、活字印刷']],
+  desc:'军事上最"憋屈"、经济文化上却最繁荣的时代。檀渊之盟用岁币换来宋辽120年和平，开封成为人口过百万的不夜城；四大发明中三项（活字、火药武器化、指南针航海）在此成熟。重文轻武的代价最终在靖康之年结清。',
+  events:[{y:'960',t:'陈桥兵变·杯酒释兵权',n:'以温和手段终结武人乱政，文官政治定型。'},{y:'1005',t:'澶渊之盟',n:'宋辽约为兄弟之国，边境榷场贸易百年不辍。'},{y:'1069',t:'王安石变法',n:'富国强兵的激进实验，撕裂朝堂的新旧党争延续到亡国。'},{y:'1127',t:'靖康之变',n:'金军破开封，徽钦二帝被掳北去，北宋亡。'}]},
+ {id:'ssong', name:'南宋·金', period:'1127–1279', color:'#4a7a6a',
+  realms:[{name:'金', color:'#8f8468', poly:[[98,41.5],[100,40],[103,38],[104.5,36.5],[103.5,34.5],[105,33.8],[107.5,33.5],[110,33.3],[112.5,33],[115.5,32.7],[118.5,33],[120.8,34.3],[119.5,36.5],[121.8,38.4],[124,39.5],[127,40.5],[129.5,42],[131,43],[134,46],[134.8,48.5],[132,48.5],[128,50],[124,50],[121,48],[117,46],[112,45],[107,44.5],[102,44],[97,43]], labelAt:[116,41]},
+          {name:'南宋', color:'#4a7a6a', poly:[[102.5,33.8],[105,33.8],[107.5,33.5],[110,33.3],[112.5,33],[115.5,32.7],[118.5,33],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[111.5,20],[110,18],[108.5,18.8],[109.5,20.6],[106.5,22],[104.5,23],[102.5,23.2],[100,24],[98.5,25.5],[98,28],[99.5,31],[100.5,33]], labelAt:[113,27.5]},
+          {name:'西夏', color:'#b08a5e', poly:[[98,37],[100,38.5],[102,40],[104,41],[106.5,41.5],[108.5,41],[109.5,39.5],[107.5,38],[106,36.5],[104,35.8],[101.5,36],[99,36.3]], labelAt:[103.5,38.8]}],
+  caps:[{n:'临安（今杭州）', lon:120.15, lat:30.25},{n:'中都（金·今北京）', lon:116.4, lat:39.9}],
+  stats:[['起止','1127 – 1279（152年）'],['分界','宋金以秦岭—淮河为界'],['经济','海上丝路极盛，市舶司岁入千万贯'],['终局','蒙古崛起：1234灭金 → 1279灭宋']],
+  desc:'偏安不等于衰落：南宋以半壁江山养活六千万人，水稻梯田、海外贸易、纸币信用都是世界领先水平，泉州跃居世界第一大港。但岳飞的北伐止于风波亭，而草原上一个更大的对手正在成形。',
+  events:[{y:'1127',t:'建炎南渡',n:'赵构即位于南京应天府，辗转定都临安。'},{y:'1140–1142',t:'岳飞北伐与风波亭',n:'郾城大捷后被十二道金牌召回，"莫须有"冤狱千古。'},{y:'1234',t:'蒙古灭金',n:'蔡州城破，南宋短暂"联蒙灭金"后独面强敌。'},{y:'1279',t:'崖山海战',n:'陆秀夫负幼帝蹈海，十万军民殉国，宋亡。'}]},
+ {id:'yuan', name:'元', period:'1271–1368', color:'#5e6e9c',
+  realms:[{name:'元', color:'#5e6e9c', poly:[[74,38.5],[74,41],[76,43.5],[80,46],[85,48],[90,50],[95,51.5],[100,52.5],[106,53.3],[112,53.5],[118,53.5],[123,53.5],[127,52.5],[131,50.5],[134.8,49],[134.8,47],[131,43],[129.5,42],[130.5,40],[127,39],[125,38.2],[121.8,38.3],[119.5,36.3],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[111.5,20],[110,17.8],[108,18.2],[109.3,20.6],[106.5,22],[104,22.3],[101,21],[98.5,22],[97.5,24.5],[98,27],[96,29],[94,27.8],[89,27.5],[85,28],[80,30],[75,32.5],[73.5,35],[73.5,37]], labelAt:[103,46]}],
+  caps:[{n:'大都（今北京）', lon:116.4, lat:39.9},{n:'上都（今锡林郭勒）', lon:116.2, lat:42.4}],
+  stats:[['起止','1271 – 1368（97年）'],['开国','元世祖忽必烈'],['制度首创','行省制（"省"的来历）'],['版图','西藏、台湾（澎湖巡检司）首次正式设治']],
+  desc:'蒙古帝国的中国本部，历代王朝版图之最。行省制度沿用至今；宣政院辖吐蕃，西藏首次纳入中央行政体系；大运河截弯取直直通大都，海运漕粮，马可·波罗笔下的"汗八里"震惊欧洲。民族等级制与滥发纸钞埋下速亡的种子。',
+  events:[{y:'1271',t:'忽必烈定国号"大元"',n:'取《易经》"大哉乾元"，定都大都。'},{y:'1279',t:'统一全国',n:'历史上游牧政权第一次完整统治中原+江南。'},{y:'1351',t:'红巾军起义',n:'"石人一只眼，挑动黄河天下反"。'},{y:'1368',t:'明军入大都',n:'元顺帝北走草原，元在中原的统治结束。'}]},
+ {id:'ming', name:'明', period:'1368–1644', color:'#9c4a3d', wall:MING_WALL,
+  realms:[{name:'明（两京十三省）', color:'#9c4a3d', poly:[[94,40],[97,42],[100,42.5],[104,42],[108,42.5],[112,42.8],[116,43],[119.5,43],[121.5,42],[124.5,40.5],[122,38.8],[121.8,38.3],[119.5,36.3],[120.8,34.3],[122,31.5],[121,28.5],[119.5,25.8],[116.5,23.2],[113,21.6],[111.5,20],[110,17.8],[108,18.2],[109.3,20.6],[106.5,22],[104,22.3],[101,21],[97.5,21.5],[97,24.5],[98,27],[96,29],[94.5,30.5],[96,33],[94,35],[92,37],[92,39.5]], labelAt:[110,31]},
+          {name:'奴儿干都司（前期羁縻）', color:'#b57a6e', poly:[[119.5,43],[121.5,45],[123,47.5],[125,50],[128,52],[131,53.3],[134.8,53.3],[134.8,49],[132,45.5],[129.5,43],[127,41.5],[124.5,40.5],[121.5,42]], labelAt:[128,48]},
+          {name:'乌斯藏都司（羁縻）', color:'#8f8aa5', poly:[[80,30],[85,28],[89,27.5],[94,27.8],[96,29],[94.5,30.5],[96,33],[94,35],[92,37],[88,36.5],[84,36.3],[79,35.5],[75,34],[76,32]], labelAt:[87,32.5]}],
+  caps:[{n:'南京（1368–1421）', lon:118.8, lat:32.06},{n:'北京（1421起）', lon:116.4, lat:39.9}],
+  stats:[['起止','1368 – 1644（276年）'],['开国','明太祖朱元璋（布衣天子）'],['壮举','郑和七下西洋（1405–1433）'],['工程','今日所见长城、北京城、紫禁城']],
+  desc:'最后一个汉人王朝。永乐年间国力极盛：郑和宝船队七下西洋远达东非，《永乐大典》成书，迁都北京"天子守国门"。中后期倭患、党争、小冰期饥荒叠加，1644年在农民军与清军的内外夹击中落幕。',
+  events:[{y:'1368',t:'洪武开国',n:'驱逐胡虏恢复中华，重建汉家衣冠与科举。'},{y:'1405–1433',t:'郑和七下西洋',n:'两百余艘宝船、两万七千人的大航海，比哥伦布早87年。'},{y:'1449',t:'土木堡之变',n:'英宗被瓦剌俘虏，于谦打赢北京保卫战续命两百年。'},{y:'1573–1582',t:'张居正改革',n:'一条鞭法+考成法，帝国最后一次自我修复。'},{y:'1644',t:'甲申之变',n:'李自成破北京，崇祯自缢煤山；吴三桂开关，清军入主。'}]},
+ {id:'qing', name:'清', period:'1636/1644–1912', color:'#3d6e8f',
+  realms:[{name:'清（1820年盛期）', color:'#3d6e8f', poly:[[73.5,37],[74,40.5],[76,43],[80,45.5],[82,47],[85,48.5],[88,49.5],[90,50.5],[95,51.5],[100,52.5],[106,53.3],[112,53.5],[118,53.5],[123,53.5],[127,53],[131,52],[134.8,51],[134.8,47.5],[133,45],[131,43.5],[130.5,42.3],[128.5,41.5],[126.5,40.5],[124.5,40],[121.8,38.3],[119.5,36.3],[120.8,34.3],[122,31.5],[121,28.5],[123,25],[121.5,21.8],[117,22.3],[113,21.6],[111.5,20],[110,17.8],[108,18.2],[109.3,20.6],[106.5,22],[104,22.3],[101,21],[97.5,24],[98,27],[96,29],[94,27.8],[89,27.5],[85,28],[80,30],[75,32.5],[73.5,35]], labelAt:[103,47]}],
+  caps:[{n:'北京', lon:116.4, lat:39.9},{n:'盛京（入关前·今沈阳）', lon:123.43, lat:41.8}],
+  stats:[['起止','1636（建号）/1644（入关）– 1912（268年）'],['鼎盛','康雍乾三朝，人口从1亿增至4亿'],['版图','1300多万平方公里，奠定现代中国疆域底盘'],['转折','1840 鸦片战争开启近代史']],
+  desc:'中国最后一个王朝。康熙收台湾、定噶尔丹、签《尼布楚条约》，乾隆平定准噶尔与大小和卓，新疆、西藏、蒙古、东北全部纳入直接治理——今日中国版图的基本盘在此奠定。1840年后在列强坚船利炮下割地赔款，变法自救失败，终结于辛亥革命。',
+  events:[{y:'1683',t:'统一台湾',n:'施琅澎湖海战胜，次年设台湾府隶福建。'},{y:'1689',t:'《尼布楚条约》',n:'中俄第一个边界条约，以法律形式确认黑龙江流域归属。'},{y:'1840',t:'鸦片战争',n:'《南京条约》割香港岛，千年未有之大变局开始。'},{y:'1851–1864',t:'太平天国',n:'席卷半壁江山，汉族督抚崛起改变权力结构。'},{y:'1898',t:'戊戌变法',n:'百日维新夭折，体制内改良之路证伪。'},{y:'1911–1912',t:'辛亥革命',n:'武昌一声枪响，宣统退位，两千年帝制落幕。'}]},
+ {id:'modern', name:'近现代', period:'1912–今', color:'#7a7a7a',
+  realms:[],
+  caps:[{n:'南京（民国）', lon:118.8, lat:32.06},{n:'北京（1949–）', lon:116.4, lat:39.9}],
+  stats:[['1912','中华民国成立，清帝退位'],['1949','中华人民共和国成立'],['版图','见底图（今日中国省界）'],['纪年','帝制纪年 → 公元纪年']],
+  desc:'帝制终结后的中国：军阀混战、抗日战争、解放战争，到1949年中华人民共和国成立。底图所示的省级行政区划，就是这段历史的空间答卷。朝代更迭的故事到此换了书写方式——从"家天下"进入共和国。',
+  events:[{y:'1912',t:'中华民国成立',n:'孙中山就任临时大总统，颁布《临时约法》。'},{y:'1919',t:'五四运动',n:'新文化运动高潮，"德先生与赛先生"。'},{y:'1945',t:'抗日战争胜利',n:'十四年抗战结束，台湾光复。'},{y:'1949',t:'中华人民共和国成立',n:'10月1日开国大典，定都北京。'}]}
+];
+
+/* ================================================== 关键事件（地图定位） ================================================== */
+const ERAS = [
+  {k:'先秦', color:'#8a6d3b'}, {k:'秦汉', color:'#a03d3d'}, {k:'魏晋南北朝', color:'#8a7ba0'},
+  {k:'隋唐', color:'#c2912e'}, {k:'宋元', color:'#2e7da0'}, {k:'明清', color:'#9c4a3d'}, {k:'近代', color:'#555'}
+];
+const EVENTS = [
+  {era:'先秦', y:'前1046', n:'牧野之战', lon:114.1, lat:35.3, note:'周武王率诸侯联军在商郊牧野决战，商军倒戈，纣王自焚，周代商而立。'},
+  {era:'先秦', y:'前770', n:'平王东迁', lon:112.45, lat:34.62, note:'周平王迁都洛邑，王室从此衰微，春秋时代开始。'},
+  {era:'先秦', y:'前356', n:'商鞅变法', lon:108.7, lat:34.35, note:'在咸阳推行军功爵与郡县制，秦国脱胎换骨，奠定统一根基。'},
+  {era:'先秦', y:'前260', n:'长平之战', lon:112.9, lat:35.8, note:'秦赵战国最大规模决战，白起坑赵卒四十万，统一天平彻底倾斜。'},
+  {era:'秦汉', y:'前221', n:'秦统一六国', lon:108.7, lat:34.35, note:'嬴政称始皇帝，中国进入大一统帝制时代。'},
+  {era:'秦汉', y:'前209', n:'大泽乡起义', lon:117.1, lat:33.6, note:'陈胜吴广揭竿而起，是中国第一次大规模平民起义。'},
+  {era:'秦汉', y:'前202', n:'垓下之战', lon:117.5, lat:33.5, note:'四面楚歌，项羽自刎乌江，刘邦建汉。'},
+  {era:'秦汉', y:'前138', n:'张骞出使西域', lon:108.9, lat:34.3, note:'从长安出发凿空西域，丝绸之路由此贯通。'},
+  {era:'秦汉', y:'前119', n:'漠北之战', lon:105, lat:47, note:'卫青、霍去病深入漠北重创匈奴，封狼居胥。'},
+  {era:'魏晋南北朝', y:'208', n:'赤壁之战', lon:113.9, lat:29.7, note:'孙刘联军火烧曹军战船，奠定三国鼎立。'},
+  {era:'魏晋南北朝', y:'311', n:'永嘉之乱', lon:112.45, lat:34.62, note:'洛阳陷落，衣冠南渡，北方进入十六国时代。'},
+  {era:'魏晋南北朝', y:'383', n:'淝水之战', lon:116.8, lat:32.6, note:'东晋八万破前秦大军，南北分立格局就此固定。'},
+  {era:'魏晋南北朝', y:'494', n:'孝文帝迁都', lon:112.45, lat:34.62, note:'北魏从平城迁洛阳，全面汉化，民族融合里程碑。'},
+  {era:'隋唐', y:'605', n:'大运河开凿', lon:119.4, lat:32.4, note:'以洛阳为中心、扬州为枢纽，贯通南北经济命脉。'},
+  {era:'隋唐', y:'626', n:'玄武门之变', lon:108.9, lat:34.3, note:'李世民夺位，随后开创贞观之治。'},
+  {era:'隋唐', y:'755', n:'安史之乱爆发', lon:116.4, lat:39.9, note:'安禄山自范阳起兵，盛唐由此转衰。'},
+  {era:'宋元', y:'1005', n:'澶渊之盟', lon:115.0, lat:35.7, note:'宋辽在澶州城下议和，换来百余年南北和平。'},
+  {era:'宋元', y:'1127', n:'靖康之变', lon:114.3, lat:34.8, note:'金军攻破开封掳走徽钦二帝，宋室南渡。'},
+  {era:'宋元', y:'1279', n:'崖山海战', lon:113.05, lat:22.4, note:'宋元最后决战，陆秀夫负帝蹈海，南宋亡。'},
+  {era:'明清', y:'1405', n:'郑和下西洋', lon:121.1, lat:31.6, note:'船队自刘家港启航，七下西洋远达东非海岸。'},
+  {era:'明清', y:'1449', n:'土木堡之变', lon:115.5, lat:40.4, note:'明英宗亲征被俘，于谦随后打赢北京保卫战。'},
+  {era:'明清', y:'1662', n:'郑成功收复台湾', lon:120.2, lat:23.0, note:'驱逐荷兰殖民者，台湾重回中国版图。'},
+  {era:'明清', y:'1689', n:'尼布楚谈判', lon:122, lat:53.3, note:'雅克萨之战后中俄划界，确认黑龙江流域归属。'},
+  {era:'近代', y:'1839', n:'虎门销烟', lon:113.6, lat:22.8, note:'林则徐销毁鸦片两万箱，次年鸦片战争爆发。'},
+  {era:'近代', y:'1894', n:'甲午海战', lon:122.1, lat:37.5, note:'北洋水师覆没于黄海威海，《马关条约》割台湾。'},
+  {era:'近代', y:'1911', n:'武昌起义', lon:114.3, lat:30.55, note:'新军一声枪响，各省响应，帝制两千年终结。'}
+];
+
+/* ================================================== 都城 ================================================== */
+const CAPITALS = [
+  {n:'西安（长安）', lon:108.9, lat:34.3, big:1, dyns:'西周·秦(咸阳)·西汉·隋·唐 等13朝', note:'建都朝代最多、时间最长的古都。关中四塞之地，沃野千里，"金城千里，天府之国"。丝绸之路的东方起点，盛唐长安是百万人口的世界第一大都会。'},
+  {n:'洛阳', lon:112.45, lat:34.62, big:1, dyns:'东周·东汉·曹魏·西晋·北魏·武周 等', note:'"天下之中"，九朝古都（一说十三朝）。居天下之中而制四方，运河时代的交通枢纽，龙门石窟与白马寺见证佛教东传。'},
+  {n:'北京', lon:116.4, lat:39.9, big:1, dyns:'金中都·元大都·明·清·当代', note:'辽金以来的北方政治中心，元大都奠定格局，明清紫禁城为其巅峰。"天子守国门"——华北平原北端扼农耕与草原之交。'},
+  {n:'南京', lon:118.8, lat:32.06, big:1, dyns:'东吴·东晋·宋齐梁陈·明初·民国', note:'"六朝古都、十朝都会"。虎踞龙盘，每当北方板荡，这里就是华夏衣冠的避风港与复兴基地。'},
+  {n:'开封', lon:114.3, lat:34.8, dyns:'后梁·后晋·后汉·后周·北宋·金末', note:'"七朝都会"。运河枢纽造就的商业帝都，《清明上河图》里的东京梦华，人口一度过百万。'},
+  {n:'杭州（临安）', lon:120.15, lat:30.25, dyns:'吴越·南宋', note:'"上有天堂，下有苏杭"。南宋行在，海贸与丝茶之利让它成为马可·波罗笔下"世界上最华贵之城"。'},
+  {n:'安阳（殷）', lon:114.35, lat:36.1, dyns:'商（盘庚迁殷后）', note:'甲骨文出土地，中国可确证最早的稳定都城，殷墟为世界文化遗产。'},
+  {n:'成都', lon:104.07, lat:30.67, dyns:'蜀汉·成汉·前后蜀', note:'每逢乱世必有政权入蜀：沃野千里易守难攻，"天下未乱蜀先乱，天下已治蜀后治"。'},
+  {n:'大同（平城）', lon:113.3, lat:40.1, dyns:'北魏（前期）', note:'鲜卑北魏的第一个都城，云冈石窟在此开凿，胡汉交融的前哨站。'},
+  {n:'邺城（今邯郸临漳）', lon:114.6, lat:36.3, dyns:'曹魏(王都)·后赵·东魏·北齐', note:'建安文学的舞台（铜雀台），北朝数代都城，中轴线布局深刻影响了后世都城规划。'},
+  {n:'银川（兴庆府）', lon:106.2, lat:38.5, dyns:'西夏', note:'西夏立国近两百年的都城，贺兰山下的西夏王陵被称为"东方金字塔"。'},
+  {n:'沈阳（盛京）', lon:123.43, lat:41.8, dyns:'清（入关前）', note:'努尔哈赤、皇太极的都城，沈阳故宫是仅存的两座完整皇家宫殿群之一。'},
+  {n:'拉萨', lon:91.1, lat:29.65, dyns:'吐蕃', note:'松赞干布迁都于此，布达拉宫始建于7世纪，文成公主入藏的终点。'},
+  {n:'大理', lon:100.2, lat:25.6, dyns:'南诏·大理国', note:'西南边疆政权五百年都城，苍山洱海间的妙香佛国。'}
+];
+
+/* ================================================== 统一与分裂 ================================================== */
+const UNITY = [
+ {s:-221,e:-207,t:'u',n:'秦'},
+ {s:-207,e:-202,t:'s',n:'楚汉'},
+ {s:-202,e:220,t:'u',n:'两汉'},
+ {s:220,e:280,t:'s',n:'三国'},
+ {s:280,e:316,t:'u',n:'西晋'},
+ {s:316,e:589,t:'s',n:'东晋十六国·南北朝'},
+ {s:589,e:618,t:'u',n:'隋'},
+ {s:618,e:907,t:'u',n:'唐'},
+ {s:907,e:960,t:'s',n:'五代十国'},
+ {s:960,e:1127,t:'m',n:'北宋·辽·夏'},
+ {s:1127,e:1279,t:'m',n:'南宋·金'},
+ {s:1279,e:1368,t:'u',n:'元'},
+ {s:1368,e:1644,t:'u',n:'明'},
+ {s:1644,e:1912,t:'u',n:'清'}
+];
+const UNITY_COLORS = {u:'#6da56b', s:'#c05b4d', m:'#d9a441'};
+const UNITY_NAMES = {u:'大一统', s:'群雄割据', m:'南北并立'};
+const DURATIONS = [
+ ['周（含春秋战国）',790],['商',554],['夏（载籍）',470],['汉',422],['宋（两宋）',319],
+ ['唐',289],['明',276],['清',268],['辽',210],['金',120],['元',97],['隋',37],['秦',15]
+];
+
+/* ================================================== 渲染框架 ================================================== */
+const svg = document.getElementById('map');
+const tooltip = document.getElementById('tooltip');
+const legend = document.getElementById('legend');
+const panel = document.getElementById('panel');
+const dynbar = document.getElementById('dynbar');
+const NS = 'http://www.w3.org/2000/svg';
+let mode = 'dyn', curDyn = 0;
+
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e);
+  return e;
+}
+
+function buildBase(){
+  const gProv = el('g', {id:'gProv'});
+  CHINA_GEO.filter(f => f.name).forEach(f => {
+    let d = '';
+    f.polys.forEach(poly => d += pathOf(poly[0]));
+    el('path', {d, class:'prov'}, gProv);
+  });
+  el('g', {id:'gOverlay'});
+  const gTop = el('g', {id:'gTopProv'});
+  CHINA_GEO.filter(f => f.name).forEach(f => {
+    let d = '';
+    f.polys.forEach(poly => d += pathOf(poly[0]));
+    el('path', {d, class:'provline'}, gTop);
+  });
+  el('g', {id:'gMarks'});
+  el('g', {id:'gFx'});
+}
+function overlay(){ return document.getElementById('gOverlay'); }
+function marks(){ return document.getElementById('gMarks'); }
+function clearLayers(){ overlay().innerHTML = ''; marks().innerHTML = ''; }
+
+function showTip(ev, html){
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  const r = document.getElementById('mapWrap').getBoundingClientRect();
+  let x = ev.clientX - r.left + 14, y = ev.clientY - r.top + 12;
+  if(x > r.width - 260) x -= 280;
+  tooltip.style.left = x + 'px'; tooltip.style.top = y + 'px';
+}
+function hideTip(){ tooltip.style.display = 'none'; }
+
+function ripple(ev){
+  const pt = svg.createSVGPoint();
+  pt.x = ev.clientX; pt.y = ev.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const fx = document.getElementById('gFx');
+  [['#fff','ripple'], ['#8c3b2e','ripple ripple2']].forEach(([color, cls]) => {
+    const c = el('circle', {cx:p.x, cy:p.y, r:3, stroke:color, class:cls}, fx);
+    setTimeout(() => c.remove(), 900);
+  });
+}
+
+function animPanel(){
+  panel.classList.remove('anim');
+  void panel.offsetWidth;
+  panel.classList.add('anim');
+}
+
+function select(elem, detail){
+  document.querySelectorAll('.sel').forEach(s => s.classList.remove('sel'));
+  if(elem){ elem.style.animation = ''; elem.classList.add('sel'); }
+  showDetail(detail);
+}
+
+function showDetail(d){
+  if(!d){ showIntro(); return; }
+  animPanel();
+  let html = '<h2>' + d.name + (d.tag ? ' <span class="tag">' + d.tag + '</span>' : '') + '</h2>';
+  if(d.stats){
+    html += '<div class="meta">';
+    d.stats.forEach(s => html += '<div><b>' + s[0] + '</b><span>' + s[1] + '</span></div>');
+    html += '</div>';
+  }
+  if(d.desc) html += '<p>' + d.desc + '</p>';
+  html += '<div class="hint">↩ 点击地图空白处或切换维度可返回总览。</div>';
+  panel.innerHTML = html;
+}
+
+function attach(elem, tipHTML, detail){
+  elem.addEventListener('mousemove', ev => { ev.stopPropagation(); showTip(ev, tipHTML); });
+  elem.addEventListener('mouseleave', hideTip);
+  elem.addEventListener('click', ev => { ev.stopPropagation(); ripple(ev); select(ev.currentTarget, detail); });
+}
+
+/* ================================================== 维度一：朝代疆域 ================================================== */
+function buildDynbar(){
+  DYNS.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = d.name + '<small>' + d.period.replace('约','') + '</small>';
+    b.style.background = '#fff';
+    b.onclick = () => { selectDyn(i); };
+    b.dataset.i = i;
+    dynbar.appendChild(b);
+  });
+}
+function paintDynbar(){
+  [...dynbar.children].forEach((b, i) => {
+    const on = i === curDyn;
+    b.classList.toggle('on', on);
+    b.style.background = on ? DYNS[i].color : '#fff';
+  });
+}
+
+function selectDyn(i){
+  curDyn = (i + DYNS.length) % DYNS.length;
+  clearLayers();
+  drawDyn();
+  paintDynbar();
+  showDynPanel();
+}
+
+function drawDyn(){
+  const d = DYNS[curDyn];
+  const g = overlay(), m = marks();
+  d.realms.forEach(r => {
+    const p = el('path', {d:pathOf(r.poly), fill:r.color, 'fill-opacity':.52, stroke:r.color, 'stroke-width':1.6, class:'shape'}, g);
+    attach(p, '<b>' + r.name + '</b><br>' + d.name + ' · ' + d.period, null);
+    p.addEventListener('click', ev => { ev.stopPropagation(); ripple(ev); showDynPanel(); });
+    const la = r.labelAt;
+    const t = el('text', {x:PX(la[0]), y:PY(la[1]), class:'realmLabel', 'font-size': (r.poly.length > 25 ? 20 : 15)}, m);
+    t.textContent = r.name.split('（')[0];
+  });
+  if(d.wall){
+    el('path', {d:lineOf(d.wall), class:'wallLine'}, m);
+    const wEnd = d.wall[1];
+    const t = el('text', {x:PX(wEnd[0]), y:PY(wEnd[1]) - 8, class:'noteLabel'}, m);
+    t.textContent = '🧱 长城';
+  }
+  d.caps.forEach(c => {
+    const x = PX(c.lon), y = PY(c.lat);
+    const gp = el('g', {class:'capStar'}, m);
+    el('path', {d:starPath(x, y, 7), fill:'#d4a017', stroke:'#7a2d1f', 'stroke-width':1}, gp);
+    const t = el('text', {x:x + 9, y:y + 4, class:'capLabel'}, gp);
+    t.textContent = c.n.split('（')[0];
+    attach(gp, '<b>★ ' + c.n + '</b><br>' + d.name + ' 都城', {name:'★ ' + c.n, tag:d.name + ' 都城', stats:[['朝代', d.name + '（' + d.period + '）']], desc:'（都城详情见"都城变迁"维度）'});
+  });
+  if(!d.realms.length){
+    const t = el('text', {x:PX(104), y:PY(37), class:'realmLabel', 'font-size':'17'}, m);
+    t.textContent = '疆域即今日中国版图（见底图）';
+  }
+  legend.innerHTML = '<h4>' + d.name + ' · ' + d.period + '</h4>'
+    + d.realms.map(r => '<div class="row"><span class="sw" style="background:' + r.color + '"></span>' + r.name + '</div>').join('')
+    + '<div class="row"><span style="color:#d4a017;font-size:13px">★</span>都城</div>'
+    + (d.wall ? '<div class="row"><span class="ln dash" style="border-color:#8a5a2a"></span>长城（示意）</div>' : '')
+    + '<div class="row" style="color:#8a8470">灰色细线为今日省界（参照）</div>';
+}
+
+function starPath(cx, cy, r){
+  let d = '';
+  for(let i = 0; i < 10; i++){
+    const rr = i % 2 === 0 ? r : r * 0.45;
+    const a = Math.PI / 5 * i - Math.PI / 2;
+    d += (i === 0 ? 'M' : 'L') + (cx + rr * Math.cos(a)).toFixed(1) + ',' + (cy + rr * Math.sin(a)).toFixed(1);
+  }
+  return d + 'Z';
+}
+
+function showDynPanel(){
+  animPanel();
+  const d = DYNS[curDyn];
+  let html = '<h2>' + d.name + ' <span class="tag">' + d.period + '</span></h2>';
+  html += '<div class="meta">';
+  d.stats.forEach(s => html += '<div><b>' + s[0] + '</b><span>' + s[1] + '</span></div>');
+  html += '</div><p>' + d.desc + '</p>';
+  html += '<div class="evts"><h3>大事记</h3>';
+  d.events.forEach(e => {
+    html += '<div class="evt"><span class="yr">' + e.y + '</span><span class="tt"><b>' + e.t + '</b> — ' + e.n + '</span></div>';
+  });
+  html += '</div>';
+  html += '<div class="navbtns"><button onclick="selectDyn(' + (curDyn - 1) + ')">← ' + DYNS[(curDyn - 1 + DYNS.length) % DYNS.length].name + '</button>'
+        + '<button onclick="selectDyn(' + (curDyn + 1) + ')">' + DYNS[(curDyn + 1) % DYNS.length].name + ' →</button></div>';
+  html += '<div class="hint">疆域为盛期约略示意；浅色区块为羁縻/都护府范围。</div>';
+  panel.innerHTML = html;
+}
+
+/* ================================================== 维度二：关键事件 ================================================== */
+function renderEvents(){
+  const m = marks();
+  const eraColor = Object.fromEntries(ERAS.map(e => [e.k, e.color]));
+  EVENTS.forEach((e, i) => {
+    const x = PX(e.lon), y = PY(e.lat);
+    const gp = el('g', {class:'evtMark', 'data-evt':i}, m);
+    el('circle', {cx:x, cy:y, r:6, fill:eraColor[e.era], stroke:'#fff', 'stroke-width':1.5}, gp);
+    el('circle', {cx:x, cy:y, r:2.2, fill:'#fff'}, gp);
+    const t = el('text', {x:x + 8, y:y + 3.5, class:'evtLabel'}, gp);
+    t.textContent = e.n;
+    attach(gp, '<b>' + e.n + '</b><br>' + e.y + ' · ' + e.era, {name:e.n, tag:e.y, stats:[['时代', e.era], ['年份', e.y]], desc:e.note});
+  });
+  legend.innerHTML = '<h4>时代图例</h4>' + ERAS.map(e =>
+    '<div class="row"><span class="sw" style="background:' + e.color + ';border-radius:50%"></span>' + e.k + '</div>').join('');
+}
+
+/* ================================================== 维度三：都城变迁 ================================================== */
+function renderCaps(){
+  const m = marks();
+  CAPITALS.forEach((c, i) => {
+    const x = PX(c.lon), y = PY(c.lat);
+    const gp = el('g', {class:'capStar', 'data-cap':i}, m);
+    el('path', {d:starPath(x, y, c.big ? 9 : 6), fill:c.big ? '#c0392b' : '#d4a017', stroke:'#fff', 'stroke-width':1.2}, gp);
+    const t = el('text', {x:x + (c.big ? 11 : 8), y:y + 4, class:'capLabel', 'font-size':c.big ? '12.5' : '10.5'}, gp);
+    t.textContent = c.n.split('（')[0];
+    attach(gp, '<b>★ ' + c.n + '</b><br>' + c.dyns, {name:'★ ' + c.n, tag:c.big ? '四大古都' : '古都', stats:[['建都朝代', c.dyns]], desc:c.note});
+  });
+  legend.innerHTML = '<h4>都城</h4>'
+    + '<div class="row"><span style="color:#c0392b;font-size:14px">★</span>四大古都（西安·洛阳·北京·南京）</div>'
+    + '<div class="row"><span style="color:#d4a017;font-size:12px">★</span>其他重要都城</div>'
+    + '<div class="row" style="color:#8a8470">大势：长安/洛阳 → 开封 → 杭州/南京 → 北京</div>';
+}
+
+/* ================================================== 维度四：统一与分裂 ================================================== */
+function renderUnity(){
+  const m = marks();
+  el('rect', {x:0, y:0, width:1000, height:730, fill:'#f7f4ec'}, m);
+  const X = yr => 30 + (yr + 230) / (1912 + 230) * 940;
+  let t = el('text', {x:500, y:60, 'text-anchor':'middle', 'font-size':'20', fill:'#5d4423', 'font-weight':'bold'}, m);
+  t.textContent = '两千一百年的分与合（前221 – 1912）';
+  // 主时间条
+  UNITY.forEach((u, i) => {
+    const x1 = X(u.s), x2 = X(u.e);
+    const r = el('rect', {x:x1, y:150, width:(x2 - x1), height:64, fill:UNITY_COLORS[u.t], stroke:'#fff', 'stroke-width':1, class:'chartBar', rx:3}, m);
+    const yrs = u.e - u.s;
+    attach(r, '<b>' + u.n + '</b><br>' + fmtYear(u.s) + ' – ' + fmtYear(u.e) + '（' + yrs + '年）<br>' + UNITY_NAMES[u.t],
+      {name:u.n, tag:UNITY_NAMES[u.t], stats:[['起止', fmtYear(u.s) + ' – ' + fmtYear(u.e)], ['时长', yrs + ' 年'], ['状态', UNITY_NAMES[u.t]]],
+       desc:unityDesc(u)});
+    if(x2 - x1 > 26){
+      const lbl = el('text', {x:(x1 + x2) / 2, y:(i % 2 ? 140 : 236), 'text-anchor':'middle', 'font-size':'12', fill:'#3c3528', class:'chartTxt'}, m);
+      lbl.textContent = u.n;
+      el('line', {x1:(x1 + x2) / 2, y1:(i % 2 ? 143 : 214), x2:(x1 + x2) / 2, y2:(i % 2 ? 150 : 226), stroke:'#999', 'stroke-width':.7}, m);
+    }
+  });
+  // 刻度
+  [-200, 0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800].forEach(yr => {
+    el('line', {x1:X(yr), y1:214, x2:X(yr), y2:258, stroke:'#c5bda8', 'stroke-width':.7}, m);
+    const tt = el('text', {x:X(yr), y:272, 'text-anchor':'middle', 'font-size':'10.5', fill:'#8a8470'}, m);
+    tt.textContent = fmtYear(yr);
+  });
+  // 国祚排行
+  t = el('text', {x:500, y:330, 'text-anchor':'middle', 'font-size':'16', fill:'#5d4423', 'font-weight':'bold'}, m);
+  t.textContent = '王朝国祚排行（年）';
+  const maxDur = DURATIONS[0][1];
+  DURATIONS.forEach((d, i) => {
+    const y = 352 + i * 27, w = d[1] / maxDur * 560;
+    const bar = el('rect', {x:260, y:y, width:w, height:18, fill: i < 3 ? '#b08a3e' : '#a98253', 'fill-opacity': .85, rx:3, class:'chartBar'}, m);
+    attach(bar, '<b>' + d[0] + '</b>：' + d[1] + ' 年', {name:d[0], tag:d[1] + ' 年', stats:[['国祚', d[1] + ' 年']], desc:d[0].includes('夏') || d[0].includes('商') || d[0].includes('周') ? '先秦三代的年数含传说与推算成分（夏商周断代工程口径），仅供对比参考。' : '自建立至灭亡的延续时间，含中衰与中兴。'});
+    const n = el('text', {x:252, y:y + 13.5, 'text-anchor':'end', 'font-size':'12', fill:'#3c3528'}, m);
+    n.textContent = d[0];
+    const v = el('text', {x:260 + w + 6, y:y + 13.5, 'font-size':'11', fill:'#8a6a43'}, m);
+    v.textContent = d[1];
+  });
+  legend.innerHTML = '<h4>状态</h4>' + Object.keys(UNITY_COLORS).map(k =>
+    '<div class="row"><span class="sw" style="background:' + UNITY_COLORS[k] + '"></span>' + UNITY_NAMES[k] + '</div>').join('');
+}
+function fmtYear(y){ return y < 0 ? '前' + (-y) : String(y); }
+function unityDesc(u){
+  if(u.t === 'u') return '中央政权有效统治全国主要农耕区的大一统时期。';
+  if(u.t === 'm') return '两个以上成熟政权长期并立、以条约或默契维持边界的时期——它们彼此都认为自己才是正统。';
+  return '多个政权混战、更替频繁的分裂时期，也往往是人口锐减、同时酝酿着制度创新的时期。';
+}
+
+/* ================================================== 总览面板 ================================================== */
+function showIntro(){
+  animPanel();
+  if(mode === 'dyn'){
+    showDynPanel();
+  } else if(mode === 'events'){
+    let list = '<ul class="list">' + EVENTS.map((e, i) =>
+      '<li onclick="pickEvt(' + i + ')"><span>' + e.n + '</span><span class="v">' + e.y + '</span></li>').join('') + '</ul>';
+    panel.innerHTML = '<h2>关键事件节点</h2><p>26 个改变中国历史走向的时刻，按发生地点落在地图上，颜色代表时代。有的是一战定乾坤（牧野、赤壁、崖山），有的是一纸改格局（澶渊之盟、尼布楚条约），有的是一声枪响换人间（武昌起义）。点击地图圆点或下方列表查看来龙去脉。</p>' + list;
+  } else if(mode === 'caps'){
+    let list = '<ul class="list">' + CAPITALS.map((c, i) =>
+      '<li onclick="pickCap(' + i + ')"><span>' + (c.big ? '★ ' : '') + c.n + '</span><span class="v">' + c.dyns.split('·')[0] + '…</span></li>').join('') + '</ul>';
+    panel.innerHTML = '<h2>都城变迁</h2><p>都城在哪儿，是每个王朝算的一笔大账：关中的险、洛阳的中、开封的漕运、北京的边防。总趋势是<b>先东西移动（长安⇄洛阳），再向东（开封）、向南（杭州/南京）、最后定于北（北京）</b>——背后是经济重心南移与边防重心北移的拉锯。点击星标看每座古都的故事。</p>' + list;
+  } else {
+    const total = 1912 + 221;
+    const uy = UNITY.filter(x => x.t === 'u').reduce((s, x) => s + x.e - x.s, 0);
+    const my = UNITY.filter(x => x.t === 'm').reduce((s, x) => s + x.e - x.s, 0);
+    const sy = total - uy - my;
+    panel.innerHTML = '<h2>统一与分裂</h2><p>自秦统一（前221）到清帝退位（1912）共 ' + total + ' 年，其中<b>大一统约 ' + uy + ' 年</b>、南北并立约 ' + my + ' 年、群雄割据约 ' + sy + ' 年——"合"确实是主旋律，但"分"占了约三分之一的时间。最长的分裂（魏晋南北朝）持续近三百年，而正是那段时期完成了民族大融合与江南大开发。</p>'
+    + '<p>下方第二张图是王朝国祚排行：两汉 422 年最长寿（大一统王朝中），秦、隋这两个"制度奠基者"却都只有十几到三十几年——<b>打天下的制度未必坐得了天下，但好制度会被下一个王朝完整继承</b>。</p>'
+    + '<div class="hint">点击图中色块查看每个时期详情。先秦三代（夏商周）为封建邦国时代，不计入统一/分裂统计。</div>';
+  }
+}
+window.pickEvt = i => { const e = EVENTS[i]; select(document.querySelector('[data-evt="' + i + '"]'), {name:e.n, tag:e.y, stats:[['时代', e.era], ['年份', e.y]], desc:e.note}); };
+window.pickCap = i => { const c = CAPITALS[i]; select(document.querySelector('[data-cap="' + i + '"]'), {name:'★ ' + c.n, tag:c.big ? '四大古都' : '古都', stats:[['建都朝代', c.dyns]], desc:c.note}); };
+
+/* ================================================== 模式切换 ================================================== */
+const MODES = [
+  {id:'dyn', label:'朝代疆域', fn:() => { drawDyn(); paintDynbar(); }},
+  {id:'events', label:'关键事件', fn:renderEvents},
+  {id:'caps', label:'都城变迁', fn:renderCaps},
+  {id:'unity', label:'统一与分裂', fn:renderUnity}
+];
+const tabs = document.getElementById('tabs');
+MODES.forEach(mo => {
+  const b = document.createElement('button');
+  b.textContent = mo.label;
+  b.onclick = () => setMode(mo.id);
+  b.dataset.mode = mo.id;
+  tabs.appendChild(b);
+});
+function setMode(id){
+  mode = id;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.mode === id));
+  dynbar.style.display = id === 'dyn' ? 'flex' : 'none';
+  clearLayers();
+  MODES.find(mo => mo.id === id).fn();
+  let i = 0;
+  [overlay(), marks()].forEach(gr => {
+    for(const ch of gr.children){
+      const delay = Math.min(i * 14, 550);
+      ch.style.animation = 'fadeIn .4s ease ' + delay + 'ms both';
+      ch.addEventListener('animationend', () => { ch.style.animation = ''; }, {once:true});
+      setTimeout(() => { ch.style.animation = ''; }, delay + 800);
+      i++;
+    }
+  });
+  showIntro();
+}
+svg.addEventListener('click', () => { if(mode !== 'dyn') select(null, null); });
+
+buildBase();
+buildDynbar();
+setMode('dyn');
+</script>
+</body>
+</html>
